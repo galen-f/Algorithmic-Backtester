@@ -2,6 +2,8 @@ from dataloader import get_price_data
 from backtest import run_backtest
 from strategies.ma_crossover import run_ma_crossover_strategy
 from strategies.macd_strategy import run_macd_strategy
+from strategies.macd_improved import run_macd_strategy
+from strategies.buy_and_hold import run_buy_and_hold_strategy
 
 def main():
     # Display a welcome message.
@@ -10,12 +12,20 @@ def main():
     "Please enter a stock ticker: ") 
     # Removed stock ticker selection for testing.
     # Display list of strats to choose from.
-    print("Enter a strategy: \n" "\tMA Crossover\n" "\tMACD") 
+    print("Enter a strategy: \n" \
+          "\tMA Crossover\n" \
+          "\tMACD\n" \
+          "\tMACD Improved") 
 
     # Get the strategy from the user.
     strategy = input("Select a trading strategy:") 
 
-    data = get_price_data('NVDA', '2024-06-20', '2025-06-20') # Assign stock and testing period. - Get the price data for that.
+    # Declaring these variables here allows us to use it for buy and hold.
+    startDate = '2024-06-20' 
+    endDate = '2025-06-20'
+    stockTicker = 'PMT'
+
+    data = get_price_data(stockTicker, startDate, endDate) # Assign stock and testing period. - Get the price data for that.
 
     if strategy == "MA Crossover":
         print("Running Moving Average Crossover Strategy...")
@@ -26,6 +36,17 @@ def main():
         print("Running MACD Strategy...")
         data = run_macd_strategy(data) 
         run_backtest(data)
+
+    elif strategy == "MACD Improved":
+        print("Running Improved MACD Strategy...")
+        data = run_macd_strategy(data)
+        run_backtest(data)
+
+    elif strategy == "Buy and Hold":
+        print("Running buy and hold strategy...")
+        # Super simple strat used to measure other strategies.
+        data = run_buy_and_hold_strategy(data, startDate, endDate)
+        print(f"Returns: {data:.2f}%")
         
     else:
         print(f"Strategy '{strategy}' is not a valid strategy")
