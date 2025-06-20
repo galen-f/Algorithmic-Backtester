@@ -46,9 +46,9 @@ def plot_strategy(data):
     Plot the moving averages and the closing price.
     """
     plt.figure(figsize=(12, 6))
-    plt.plot(data['Close'], label='Close Price')
-    plt.plot(data['SHORT_MA'], label='Short Moving Average', alpha=0.5)
-    plt.plot(data['LONG_MA'], label='Long Moving Average', alpha=0.5)
+    plt.plot(data['Close'], label='Close Price', alpha = 0.3)
+    plt.plot(data['SHORT_MA'], label='Short Moving Average')
+    plt.plot(data['LONG_MA'], label='Long Moving Average')
     
     # Plot buy signals (buy signals are mapped when position changes to 1)
     buy_signals = data[data['Position_Change'] == 2]
