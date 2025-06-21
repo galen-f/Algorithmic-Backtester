@@ -2,7 +2,7 @@ from dataloader import get_price_data
 from backtest import run_backtest
 from strategies.ma_crossover import run_ma_crossover_strategy
 from strategies.macd_strategy import run_macd_strategy
-from strategies.macd_improved import run_macd_strategy
+from strategies.macd_improved import run_macd_strategy_improved
 from strategies.buy_and_hold import run_buy_and_hold_strategy
 
 def main():
@@ -39,7 +39,7 @@ def main():
 
     elif strategy == "MACD Improved":
         print("Running Improved MACD Strategy...")
-        data = run_macd_strategy(data)
+        data = run_macd_strategy_improved(data)
         run_backtest(data)
 
     elif strategy == "Buy and Hold":
