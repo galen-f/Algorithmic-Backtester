@@ -17,6 +17,9 @@ def calculate_macd(data, short_window, long_window, signal_window):
     data['MACD'] = data['EMA_SHORT'] - data['EMA_LONG'] # The MACD Line
     # The Signal Line is the EMA of the MACD line - this is used to generate buy/sell signals
     data['Signal'] = data['MACD'].ewm(span=signal_window, adjust=False).mean()
+
+    # We are going to calculate the histogram value now too, we will use this to determine the strength of the signal. and when to buy and sell
+    data['Histogram'] = data['MACD'] - data['Signal']
     return data
 
 """
@@ -24,29 +27,34 @@ What makes this strategy improved is our handling of the signal detection surrou
 We can include the parameters of the original MACD strategy but with this added component.
 When there is high momentum, those above the centerline are more likely to be short term gains.
 The strategy will buy when the MACD crosses above the signal line and is below the centerline,
-and sell when the MACD crosses below the signal line and is above the centerline.
+and sell when the MACD crosses below the signal line.
 """
 
 # Crossover Detection Logic
 def crossover_logic(data):
-    # Set default position to 0
-    data['Position'] = 0
+    position = 'neutral' # No position by default
 
-    # Buy: When MACD cross above Signal AND MACD is below 0 (Early momentum)
-    buy_signal = (data['MACD'] > data['Signal']) & (data['MACD'].shift(1) < data['Signal'].shift(1)) & (data['MACD'] < 0)
-    data.loc[buy_signal, 'Position'] = 1  # Buy signal
+    for i in range(1, len(data)-1):
+        if data['Histogram'].iloc[i] > 0 and data['Histogram'].iloc[i-1] <= 0 and data['MACD'].iloc[i] < 0 and position != 'buy':
+            buy_operation(data, data.index[i])
+            position = 'buy'
 
-    # Sell: When MACD crosses below the Signal
-    sell_signal = ((data['MACD'] < data['Signal']) & (data['MACD'].shift(1) > data['Signal'].shift(1)))
-    data.loc[sell_signal, 'Position'] = -1  # Sell signal
-
-    # Fill position forward to simulate holding
-    data['Position'] = data['Position'].ffill().fillna(0)
-
-    # Detect actual position changes
-    data['Position_Change'] = data['Position'].diff()
+        elif data['Histogram'].iloc[i] < 0 and data['Histogram'].iloc[i-1] >= 0 and position != 'sell':
+            sell_operation(data, data.index[i])
+            position = 'sell'
 
     return data
+
+
+def buy_operation(data, index):
+    """Marks a buy signal and sets Position and Position_Change appropriately."""
+    data.at[index, 'Position'] = 1
+    data.at[index, 'Position_Change'] = 1
+    
+def sell_operation(data, index):
+    """Marks a sell signal and sets Position and Position_Change appropriately."""
+    data.at[index, 'Position'] = -1
+    data.at[index, 'Position_Change'] = -1
 
 def plot_strategy(data):
     """

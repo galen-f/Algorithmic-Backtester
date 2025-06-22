@@ -13,9 +13,10 @@ def main():
     # Removed stock ticker selection for testing.
     # Display list of strats to choose from.
     print("Enter a strategy: \n" \
-          "\tMA Crossover\n" \
-          "\tMACD\n" \
-          "\tMACD Improved") 
+          "\t1. MA Crossover\n" \
+          "\t2. MACD\n" \
+          "\t3. MACD Improved\n" \
+            "\t4. Buy and Hold") 
 
     # Get the strategy from the user.
     strategy = input("Select a trading strategy:") 
@@ -27,22 +28,22 @@ def main():
 
     data = get_price_data(stockTicker, startDate, endDate) # Assign stock and testing period. - Get the price data for that.
 
-    if strategy == "MA Crossover":
+    if strategy == "MA Crossover" or strategy == "1":
         print("Running Moving Average Crossover Strategy...")
         data = run_ma_crossover_strategy(data)
         run_backtest(data)
 
-    elif strategy == "MACD":
+    elif strategy == "MACD" or strategy == "2":
         print("Running MACD Strategy...")
         data = run_macd_strategy(data) 
         run_backtest(data)
 
-    elif strategy == "MACD Improved":
+    elif strategy == "MACD Improved" or strategy == "3":
         print("Running Improved MACD Strategy...")
         data = run_macd_strategy_improved(data)
         run_backtest(data)
 
-    elif strategy == "Buy and Hold":
+    elif strategy == "Buy and Hold" or strategy == "4":
         print("Running buy and hold strategy...")
         # Super simple strat used to measure other strategies.
         data = run_buy_and_hold_strategy(data, startDate, endDate)
