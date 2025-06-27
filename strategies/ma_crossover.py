@@ -1,5 +1,3 @@
-from dataloader import get_price_data
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -10,7 +8,6 @@ def run_ma_crossover_strategy(data):
     data = calculate_moving_average(data, 8, 'SHORT_MA')
     data = calculate_moving_average(data, 50, 'LONG_MA')
     data = crossover_logic(data)
-    data = assign_positions(data)
     plot_strategy(data)
     return data
 
@@ -27,19 +24,38 @@ def crossover_logic(df):
     """
     Apply crossover logic to the DataFrame.
     """
-    df['Signal'] = np.where(df['SHORT_MA'] > df['LONG_MA'], 1, -1) 
-    df['Position_Change'] = df["Signal"].diff()
+    position = 'neutral'  # No position by default
+    df['Position'] = 0  # Initialize Position column
+    df['Position_Change'] = 0  # Initialize Position_Change column
+
+    # Long moving average crosses above short moving average - and the previous day was not the case
+    long_crosses_over_short = ((df['LONG_MA'] > df['SHORT_MA']) & (df['LONG_MA'].shift(1) <= df['SHORT_MA'].shift(1)) )
+    
+    # Short moving average crosses above long moving average -  and the previous day was not the case
+    short_crosses_over_long = ((df['SHORT_MA'] > df['LONG_MA']) & (df['SHORT_MA'].shift(1) <= df['LONG_MA'].shift(1)))
+
+    for i in range(1, len(df)):
+        if long_crosses_over_short.iloc[i] and position != 'sell':
+            sell_operation(df, i)
+            position = 'sell'
+        elif short_crosses_over_long.iloc[i] and position == 'sell':
+            buy_operation(df, i)
+            position = 'buy'
+        else:
+            df.at[df.index[i], 'Position'] = df.at[df.index[i-1], 'Position']
+            df.at[df.index[i], 'Position_Change'] = 0
+
     return df
 
-def assign_positions(df):
-    """
-    Assign positions based on the crossover signals.
-    """
-    df['Position'] = 0
-    df.loc[df['Position_Change'] == 2, 'Position'] = 1  # Buy signal
-    df.loc[df['Position_Change'] == -2, 'Position'] = 0  # Sell signal
-    df['Position'] = df['Position'].ffill().fillna(0)
-    return df
+def buy_operation(data, index):
+    """Marks a buy signal and sets Position and Position_Change appropriately."""
+    data.at[data.index[index], 'Position'] = 1
+    data.at[data.index[index], 'Position_Change'] = 1
+
+def sell_operation(data, index):
+    """Marks a sell signal and sets Position and Position_Change appropriately."""
+    data.at[data.index[index], 'Position'] = 0
+    data.at[data.index[index], 'Position_Change'] = -1
 
 def plot_strategy(data):
     """
@@ -51,13 +67,15 @@ def plot_strategy(data):
     plt.plot(data['LONG_MA'], label='Long Moving Average')
     
     # Plot buy signals (buy signals are mapped when position changes to 1)
-    buy_signals = data[data['Position_Change'] == 2]
-    plt.scatter(buy_signals.index, buy_signals['Close'], marker='^', color='g', label='Buy Signal', s=100)
-    
+    buy_signals = data[data['Position_Change'] == 1]
+    for idx in buy_signals.index:
+        plt.scatter(idx, buy_signals['Close'].loc[idx], marker='^', color='g', label='', s=100)
+
     # Plot sell signals (sell signals are mapped when position changes to 0)
-    sell_signals = data[data['Position_Change'] == -2]
-    plt.scatter(sell_signals.index, sell_signals['Close'], marker='v', color='r', label='Sell Signal', s=100)
-    
+    sell_signals = data[data['Position_Change'] == -1]
+    for idx in sell_signals.index:
+        plt.scatter(idx, sell_signals['Close'].loc[idx], marker='v', color='r', label='', s=100)
+
     plt.title('Moving Average Crossover Strategy')
     plt.xlabel('Date')
     plt.ylabel('Price')
